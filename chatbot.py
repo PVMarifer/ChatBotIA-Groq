@@ -1,6 +1,5 @@
 from groq import Groq
 
-# Inicializar cliente con tu API Key
 client = Groq(api_key="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")
 
 print("chatbot: Escribe 'quit', 'bye' o 'exit' para detener el modelo.\n")
@@ -28,4 +27,4 @@ while True:
         if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
             print(chunk.choices[0].delta.content, end="", flush=True)
 
-    print()  # Salto de línea al final de la respuesta
+    print() 
