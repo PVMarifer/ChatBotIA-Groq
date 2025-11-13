@@ -38,7 +38,11 @@ document.addEventListener("DOMContentLoaded", () => {
         currentChatId = id;
         chatBox.innerHTML = "";
         chats[id].forEach(msg => {
-            appendMessage(msg.role === "user" ? "Tú" : "IA", msg.content, msg.role === "user" ? "user-message" : "bot-message");
+            appendMessage(
+                msg.role === "user" ? "Tú" : "IA",
+                msg.content,
+                msg.role === "user" ? "user-message" : "bot-message"
+            );
         });
         updateHistory();
     }
@@ -53,34 +57,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateHistory() {
         historyList.innerHTML = "";
-        Object.keys(chats).sort((a,b)=>b-a).forEach(id=>{
-            const li = document.createElement("li");
-            const firstMsg = chats[id][0]?.content?.slice(0,30) || "Nuevo chat";
-            li.textContent = firstMsg;
-            li.onclick = () => loadChat(id);
+        Object.keys(chats)
+            .sort((a, b) => b - a)
+            .forEach(id => {
+                const li = document.createElement("li");
+                const firstMsg = chats[id][0]?.content?.slice(0, 30) || "Nuevo chat";
+                li.textContent = firstMsg;
 
-            const trashBtn = document.createElement("button");
-            trashBtn.textContent = "🗑️";
-            trashBtn.classList.add("history-trash-btn");
-            trashBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                Swal.fire({
-                    title: '¿Eliminar chat?',
-                    icon: 'warning',
-                    showCancelButton: true
-                }).then(r=>{
-                    if(r.isConfirmed){
-                        delete chats[id];
-                        saveChats();
-                        updateHistory();
-                        chatBox.innerHTML = "";
-                    }
+                li.onclick = () => loadChat(id);
+
+                const trashBtn = document.createElement("button");
+                trashBtn.textContent = "🗑️";
+                trashBtn.classList.add("history-trash-btn");
+
+                trashBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    Swal.fire({
+                        title: '¿Eliminar chat?',
+                        icon: 'warning',
+                        showCancelButton: true
+                    }).then(r => {
+                        if (r.isConfirmed) {
+                            delete chats[id];
+                            saveChats();
+                            updateHistory();
+                            chatBox.innerHTML = "";
+                        }
+                    });
                 });
-            });
 
-            li.appendChild(trashBtn);
-            historyList.appendChild(li);
-        });
+                li.appendChild(trashBtn);
+                historyList.appendChild(li);
+            });
     }
 
     function appendMessage(sender, text, cssClass) {
@@ -119,11 +127,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keydown", e => { if(e.key==="Enter") sendMessage(); });
+    userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
     newChatBtn.addEventListener("click", newChat);
 
     /* ---------------------------
-       TAREAS 
+       TAREAS Y RECORDATORIOS
     ----------------------------*/
     addTaskBtn.addEventListener("click", () => {
         Swal.fire({
@@ -131,62 +139,126 @@ document.addEventListener("DOMContentLoaded", () => {
             html: `
                 <input id="task-title" class="swal2-input" placeholder="Título">
                 <input id="task-date" type="date" class="swal2-input">
-                <input id="task-hour" type="number" min="0" max="23" class="swal2-input" placeholder="Hora">
-                <input id="task-minute" type="number" min="0" max="59" class="swal2-input" placeholder="Minutos">
+                <input id="task-hour" type="number" min="0" max="23" class="swal2-input" placeholder="Hora (0-23)">
+                <input id="task-minute" type="number" min="0" max="59" class="swal2-input" placeholder="Minutos (0-59)">
             `,
-        confirmButtonText: 'Agregar',
-preConfirm: () => {
-    const t = document.getElementById('task-title').value.trim();
-    const d = document.getElementById('task-date').value;
-    const h = parseInt(document.getElementById('task-hour').value);
-    const m = parseInt(document.getElementById('task-minute').value);
+            confirmButtonText: 'Agregar',
+            preConfirm: () => {
+                const t = document.getElementById('task-title').value.trim();
+                const d = document.getElementById('task-date').value;
+                const h = parseInt(document.getElementById('task-hour').value);
+                const m = parseInt(document.getElementById('task-minute').value);
 
-    if(!t || !d || isNaN(h) || isNaN(m)) 
-        return Swal.showValidationMessage("Completa todo");
+                if (!t || !d || isNaN(h) || isNaN(m))
+                    return Swal.showValidationMessage("Completa todos los campos");
 
-    return { t, d, h, m };
-}
-        }).then(r=>{
-            if(r.isConfirmed){
+                if (h < 0 || h > 23)
+                    return Swal.showValidationMessage("Hora inválida (0–23)");
+
+                if (m < 0 || m > 59)
+                    return Swal.showValidationMessage("Minutos inválidos (0–59)");
+
+                return { t, d, h, m };
+            }
+        }).then(r => {
+            if (r.isConfirmed) {
                 const { t, d, h, m } = r.value;
                 const date = new Date(`${d}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
-                user_data.tasks.push({ titulo: t, fecha: date.toISOString(), hecho:false });
+
+                user_data.tasks.push({ titulo: t, fecha: date.toISOString(), hecho: false });
                 saveUserData();
                 scheduleReminder(t, date);
+
                 Swal.fire("Listo", `Tarea para ${date.toLocaleString()}`, "success");
             }
         });
     });
 
-    function scheduleReminder(titulo, when){
-        const delay = when.getTime() - Date.now();
-        if(delay < 0) return;
+    /* ---------------------------
+       MINI WIDGET CON CUENTA REGRESIVA
+    ----------------------------*/
+    const alarmaSonido = new Audio("/static/sounds/alarma.mp3");
 
-        setTimeout(()=>{
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
+    function lanzarNotificacion(titulo) {
+        if (Notification.permission === "granted") {
+            new Notification("⏰ Recordatorio", { body: titulo, icon: "/static/images/icon.png" });
+        }
+    }
+
+    function activarEfectosRecordatorio(titulo) {
+        try { alarmaSonido.currentTime = 0; alarmaSonido.play(); } catch (e) {}
+        if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+        lanzarNotificacion(titulo);
+    }
+
+    function mostrarMiniWidget(titulo, segundos = 60) {
+        const box = document.getElementById("mini-warning");
+        if (!box) return;
+
+        box.style.display = "block";
+        let tiempoRestante = segundos;
+
+        function actualizarWidget() {
+            if (tiempoRestante <= 0) {
+                box.style.display = "none";
+                clearInterval(intervalo);
+                return;
+            }
+            box.innerHTML = `⚠ Falta 1 minuto para: <b>${titulo}</b> (${tiempoRestante}s)
+                <button onclick="document.getElementById('mini-warning').style.display='none'; clearInterval(intervalo);">Cerrar</button>`;
+            tiempoRestante--;
+        }
+
+        actualizarWidget();
+        const intervalo = setInterval(actualizarWidget, 1000);
+    }
+
+    function scheduleReminder(titulo, when) {
+        const now = Date.now();
+        const eventTime = when.getTime();
+        const delay = eventTime - now;
+        if (delay <= 0) return;
+
+        const warningDelay = delay - 60000;
+        if (warningDelay > 0) {
+            setTimeout(() => mostrarMiniWidget(titulo, 60), warningDelay);
+        } else {
+            mostrarMiniWidget(titulo, Math.floor(delay / 1000));
+        }
+
+        setTimeout(() => {
+            activarEfectosRecordatorio(titulo);
             Swal.fire("⏰ Recordatorio", titulo, "info");
             appendMessage("IA", `⏰ Recordatorio: ${titulo}`, "bot-message");
         }, delay);
     }
 
-    viewTasksBtn.addEventListener("click", ()=>{
+    /* ---------------------------
+       PANEL DE TAREAS
+    ----------------------------*/
+    viewTasksBtn.addEventListener("click", () => {
         renderTasks();
         tasksPanel.classList.add("tasks-sidebar-open");
     });
 
-    closeTasksBtn.addEventListener("click", ()=>{
+    closeTasksBtn.addEventListener("click", () => {
         tasksPanel.classList.remove("tasks-sidebar-open");
     });
 
-    function renderTasks(){
+    function renderTasks() {
         tasksList.innerHTML = "";
-        const activos = user_data.tasks.filter(t=>!t.hecho);
+        const activos = user_data.tasks.filter(t => !t.hecho);
 
-        if(activos.length === 0){
+        if (activos.length === 0) {
             tasksList.innerHTML = "<li>No hay tareas</li>";
             return;
         }
 
-        activos.forEach(task=>{
+        activos.forEach(task => {
             const li = document.createElement("li");
             const fecha = new Date(task.fecha).toLocaleString();
             li.innerHTML = `
@@ -194,16 +266,13 @@ preConfirm: () => {
                 <small>${fecha}</small>
                 <button class="delete-btn">🗑️</button>
             `;
-
-            li.querySelector(".delete-btn").addEventListener("click", ()=>{
+            li.querySelector(".delete-btn").addEventListener("click", () => {
                 user_data.tasks = user_data.tasks.filter(t => t !== task);
                 saveUserData();
                 renderTasks();
             });
-
             tasksList.appendChild(li);
         });
     }
-
     updateHistory();
 });
