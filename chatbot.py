@@ -1,6 +1,6 @@
 from groq import Groq
 
-#client = Groq(api_key="")
+client = Groq(api_key="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")
 
 print("chatbot: Escribe 'quit', 'bye' o 'exit' para detener el modelo.\n")
 
