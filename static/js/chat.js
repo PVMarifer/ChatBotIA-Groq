@@ -7,12 +7,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const addTaskBtn = document.getElementById("add-task-btn");
     const hamburgerBtn = document.getElementById("hamburger-btn");
     const sidebar = document.querySelector(".sidebar");
+    const viewTasksBtn = document.getElementById("view-tasks-btn");
+    const tasksPanel = document.getElementById("tasks-panel");
+    const tasksList = document.getElementById("tasks-list");
+    const closeTasksBtn = document.querySelector(".close-tasks-btn");
 
     let chats = JSON.parse(localStorage.getItem("chats")) || {};
     let currentChatId = null;
     let user_data = JSON.parse(localStorage.getItem("user_data")) || { tasks: [] };
 
-    // -------------------- Chats --------------------
+    /* ---------------------------
+       Sidebar izquierda- Menú hamburguesa
+    ----------------------------*/
+    hamburgerBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("collapsed");
+    });
+
+    /* ---------------------------
+       Chats
+    ----------------------------*/
     function newChat() {
         currentChatId = Date.now().toString();
         chats[currentChatId] = [];
@@ -46,35 +59,26 @@ document.addEventListener("DOMContentLoaded", () => {
             li.textContent = firstMsg;
             li.onclick = () => loadChat(id);
 
-            // Botón basurero
             const trashBtn = document.createElement("button");
-            trashBtn.textContent = '🗑️';
-            trashBtn.classList.add('history-trash-btn');
-            trashBtn.addEventListener('click', (e) => {
+            trashBtn.textContent = "🗑️";
+            trashBtn.classList.add("history-trash-btn");
+            trashBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 Swal.fire({
-                    title: '¿Deseas eliminar este chat?',
-                    text: "¡No podrás recuperar este historial!",
+                    title: '¿Eliminar chat?',
                     icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Sí, borrar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
+                    showCancelButton: true
+                }).then(r=>{
+                    if(r.isConfirmed){
                         delete chats[id];
-                        if(currentChatId === id) chatBox.innerHTML = "";
-                        currentChatId = null;
                         saveChats();
                         updateHistory();
-                        Swal.fire('¡Borrado!', 'El chat ha sido eliminado.', 'success');
+                        chatBox.innerHTML = "";
                     }
                 });
             });
 
             li.appendChild(trashBtn);
-            if(id===currentChatId) li.classList.add("active");
             historyList.appendChild(li);
         });
     }
@@ -88,118 +92,118 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function sendMessage() {
-        const message = userInput.value.trim();
-        if (!message) return;
+        const msg = userInput.value.trim();
+        if (!msg) return;
+
         if (!currentChatId) newChat();
 
-        appendMessage("Tú", message, "user-message");
+        appendMessage("Tú", msg, "user-message");
         userInput.value = "";
 
         try {
             const response = await fetch("/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message }),
+                body: JSON.stringify({ message: msg }),
             });
 
             const data = await response.json();
             appendMessage("IA", data.response, "bot-message");
 
-            chats[currentChatId].push({ role: "user", content: message });
+            chats[currentChatId].push({ role: "user", content: msg });
             chats[currentChatId].push({ role: "bot", content: data.response });
             saveChats();
-            updateHistory();
         } catch (error) {
-            appendMessage("Error", error, "error-message");
+            appendMessage("Error", error.toString(), "error-message");
         }
     }
 
-    // -------------------- Eventos --------------------
-    newChatBtn.addEventListener("click", newChat);
     sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+    userInput.addEventListener("keydown", e => { if(e.key==="Enter") sendMessage(); });
+    newChatBtn.addEventListener("click", newChat);
 
-    hamburgerBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("collapsed");
-    });
-
-    // -------------------- Tareas / Recordatorios --------------------
+    /* ---------------------------
+       TAREAS 
+    ----------------------------*/
     addTaskBtn.addEventListener("click", () => {
         Swal.fire({
             title: 'Nueva tarea',
-            html:
-                '<input id="task-title" class="swal2-input" placeholder="Título de la tarea">' +
-                '<input id="task-date" type="date" class="swal2-input">' +
-                '<input id="task-hour" type="number" class="swal2-input" placeholder="Hora (0-23)" min="0" max="23">' +
-                '<input id="task-minute" type="number" class="swal2-input" placeholder="Minutos (0-59)" min="0" max="59">',
-            confirmButtonText: 'Agregar',
-            focusConfirm: false,
-            preConfirm: () => {
-                const titulo = document.getElementById('task-title').value.trim();
-                const dateStr = document.getElementById('task-date').value;
-                const hour = parseInt(document.getElementById('task-hour').value);
-                const minute = parseInt(document.getElementById('task-minute').value);
+            html: `
+                <input id="task-title" class="swal2-input" placeholder="Título">
+                <input id="task-date" type="date" class="swal2-input">
+                <input id="task-hour" type="number" min="0" max="23" class="swal2-input" placeholder="Hora">
+                <input id="task-minute" type="number" min="0" max="59" class="swal2-input" placeholder="Minutos">
+            `,
+        confirmButtonText: 'Agregar',
+preConfirm: () => {
+    const t = document.getElementById('task-title').value.trim();
+    const d = document.getElementById('task-date').value;
+    const h = parseInt(document.getElementById('task-hour').value);
+    const m = parseInt(document.getElementById('task-minute').value);
 
-                if(!titulo || !dateStr || isNaN(hour) || isNaN(minute)){
-                    Swal.showValidationMessage('Debes completar todos los campos correctamente');
-                    return false;
-                }
+    if(!t || !d || isNaN(h) || isNaN(m)) 
+        return Swal.showValidationMessage("Completa todo");
 
-                if(hour < 0 || hour > 23 || minute < 0 || minute > 59){
-                    Swal.showValidationMessage('Hora o minutos inválidos (Hora:0-23, Minutos:0-59)');
-                    return false;
-                }
-
-                return { titulo, dateStr, hour, minute };
-            }
-        }).then((result) => {
-            if(result.isConfirmed){
-                const { titulo, dateStr, hour, minute } = result.value;
-                addTask(titulo, dateStr, hour, minute);
+    return { t, d, h, m };
+}
+        }).then(r=>{
+            if(r.isConfirmed){
+                const { t, d, h, m } = r.value;
+                const date = new Date(`${d}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+                user_data.tasks.push({ titulo: t, fecha: date.toISOString(), hecho:false });
+                saveUserData();
+                scheduleReminder(t, date);
+                Swal.fire("Listo", `Tarea para ${date.toLocaleString()}`, "success");
             }
         });
     });
 
-    function addTask(titulo, dateStr, hour, minute) {
-        const now = new Date();
-        const taskDate = new Date(dateStr + "T00:00:00");
-        taskDate.setHours(hour, minute, 0, 0);
+    function scheduleReminder(titulo, when){
+        const delay = when.getTime() - Date.now();
+        if(delay < 0) return;
 
-        if(taskDate.getTime() <= now.getTime()) {
-            Swal.fire('Error', 'La fecha y hora seleccionada ya pasó', 'error');
-            return;
-        }
-
-        user_data.tasks.push({ titulo, fecha: taskDate.toISOString(), hecho: false });
-        saveUserData();
-
-        // Confirmación de creación
-        Swal.fire('Tarea agregada', `✅ "${titulo}" programada para ${taskDate.toLocaleString()}`, 'success');
-
-        appendMessage("IA", `✅ He agregado la tarea "${titulo}" para ${taskDate.toLocaleString()}.`, "bot-message");
-
-        scheduleReminder(titulo, taskDate);
-    }
-
-    function scheduleReminder(titulo, taskDate) {
-        const delay = taskDate.getTime() - new Date().getTime();
-        setTimeout(() => {
-            // SweetAlert de alarma
-            Swal.fire({
-                title: '⏰ Recordatorio',
-                text: `"${titulo}" ahora.`,
-                icon: 'info',
-                confirmButtonText: 'Entendido'
-            });
-            appendMessage("IA", `⏰ Recordatorio: "${titulo}" ahora.`, "bot-message");
+        setTimeout(()=>{
+            Swal.fire("⏰ Recordatorio", titulo, "info");
+            appendMessage("IA", `⏰ Recordatorio: ${titulo}`, "bot-message");
         }, delay);
     }
 
-    // -------------------- Inicialización --------------------
-    if(Object.keys(chats).length > 0){
-        const firstId = Object.keys(chats)[0];
-        loadChat(firstId);
-    } else {
-        newChat();
+    viewTasksBtn.addEventListener("click", ()=>{
+        renderTasks();
+        tasksPanel.classList.add("tasks-sidebar-open");
+    });
+
+    closeTasksBtn.addEventListener("click", ()=>{
+        tasksPanel.classList.remove("tasks-sidebar-open");
+    });
+
+    function renderTasks(){
+        tasksList.innerHTML = "";
+        const activos = user_data.tasks.filter(t=>!t.hecho);
+
+        if(activos.length === 0){
+            tasksList.innerHTML = "<li>No hay tareas</li>";
+            return;
+        }
+
+        activos.forEach(task=>{
+            const li = document.createElement("li");
+            const fecha = new Date(task.fecha).toLocaleString();
+            li.innerHTML = `
+                <strong>${task.titulo}</strong><br>
+                <small>${fecha}</small>
+                <button class="delete-btn">🗑️</button>
+            `;
+
+            li.querySelector(".delete-btn").addEventListener("click", ()=>{
+                user_data.tasks = user_data.tasks.filter(t => t !== task);
+                saveUserData();
+                renderTasks();
+            });
+
+            tasksList.appendChild(li);
+        });
     }
+
+    updateHistory();
 });

@@ -7,33 +7,46 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
+
+        <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="sidebar-header">
                 <button id="hamburger-btn" class="circle-btn">☰</button>
                 <h2>Chats</h2>
             </div>
+
             <ul id="history"></ul>
+
             <div class="sidebar-buttons">
                 <button id="new-chat-btn" class="circle-btn">+</button>
             </div>
         </div>
 
-        <!-- Chat principal -->
+        <!-- CHAT PRINCIPAL -->
         <div class="chat-container">
             <h1>Asistente IA</h1>
             <div id="chat-box"></div>
 
             <div class="input-container">
-                <input type="text" id="user-input" placeholder="Escribe tu mensaje..." />
+                <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
                 <button id="send-btn">Enviar</button>
-                <button id="add-task-btn">📅</button>
+                <button id="add-task-btn">📅</button>  <!-- Agregar TAREAS // Cambiar Icóno**-->
+                <button id="view-tasks-btn">🗂️</button>  <!-- PANEL DE TAREAS -->
             </div>
         </div>
+
+        <!-- PANEL DE TAREAS -->
+        <div id="tasks-panel" class="tasks-panel">
+            <button class="close-tasks-btn">✖</button>
+            <h2>Tareas pendientes</h2>
+            <ul id="tasks-list"></ul>
+        </div>
+
     </div>
 
-    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <script src="/static/js/chat.js"></script>
 </body>
 </html>

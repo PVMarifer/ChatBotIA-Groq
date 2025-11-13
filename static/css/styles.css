@@ -1,4 +1,3 @@
-/* Reset */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -19,14 +18,14 @@ body {
     align-items: stretch;
 }
 
-/* Contenedor principal */
+/* ==== APP CONTAINER ==== */
 .app-container {
     display: flex;
     width: 100%;
     height: 100vh;
 }
 
-/* Sidebar */
+/* ==== SIDEBAR PRINCIPAL ==== */
 .sidebar {
     width: 270px;
     background-color: #1a1a1a;
@@ -68,6 +67,12 @@ body {
     align-items: center;
     transition: background 0.3s;
 }
+.sidebar-buttons {
+    margin-top: auto;       
+    display: flex;
+    justify-content: center;  
+    padding: 20px 0;        
+}
 
 .circle-btn:hover {
     background-color: #00d1b2;
@@ -81,11 +86,11 @@ body {
 }
 
 .sidebar li {
-    position: relative; /* Para el basurero */
+    position: relative;
     background: #2b2b2b;
     margin: 5px 0;
     padding: 10px;
-    padding-right: 35px; /* Espacio para el basurero */
+    padding-right: 35px;
     border-radius: 8px;
     cursor: pointer;
     white-space: nowrap;
@@ -106,7 +111,7 @@ body {
     font-weight: bold;
 }
 
-/* Botón de basurero en historial */
+/* Basurero */
 .history-trash-btn {
     position: absolute;
     top: 50%;
@@ -124,14 +129,7 @@ body {
     color: #ff0000;
 }
 
-.sidebar-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    padding: 10px;
-}
-
-/* Chat principal */
+/* ==== CHAT ==== */
 .chat-container {
     flex: 1;
     display: flex;
@@ -145,7 +143,6 @@ body {
     margin-bottom: 15px;
 }
 
-/* Chat box */
 #chat-box {
     flex: 1;
     background-color: #1e1e1e;
@@ -182,30 +179,6 @@ body {
     align-self: flex-start;
 }
 
-.message-content code {
-    background-color: #333;
-    color: #00ffa6;
-    padding: 3px 6px;
-    border-radius: 4px;
-    font-family: monospace;
-}
-
-.message-content pre {
-    background-color: #1b1b1b;
-    color: #00ffa6;
-    padding: 8px;
-    border-radius: 6px;
-    overflow-x: auto;
-}
-
-.message-content ul {
-    margin-left: 20px;
-}
-
-.message-content strong {
-    color: #00d8b6;
-}
-
 /* Input */
 .input-container {
     display: flex;
@@ -238,7 +211,72 @@ button:hover {
     background-color: #00d1b2;
 }
 
-.error-message {
+/* ==== PANEL DE TAREAS   ==== */
+
+#tasks-panel {
+    position: fixed;
+    top: 0;
+    right: -350px;
+    width: 350px;
+    height: 100%;
+    background: #1b1b1b;
+    border-left: 1px solid #333;
+    transition: right 0.3s ease;
+    z-index: 9999;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+#tasks-panel.tasks-sidebar-open {
+    right: 0;
+}
+
+.close-tasks-btn {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
     color: #ff6b6b;
-    font-weight: bold;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.close-tasks-btn:hover {
+    color: #ff3b3b;
+}
+
+#tasks-list li {
+    background: #2b2b2b;
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#tasks-list li span {
+    flex: 1;
+}
+
+.task-actions button {
+    background: none;
+    color: #00bfa6;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.task-actions button:hover {
+    color: #00ffd0;
+}
+.sidebar.collapsed #hamburger-btn {
+    position: absolute;
+    left: 260px;
+}
+.swal2-input { /*Swal del cuadro emergente de tareas*/
+    text-align: center;      
+    width: 80% !important;     
+    margin: 8px auto !important; 
 }
