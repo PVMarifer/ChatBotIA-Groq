@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente IA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar con historial -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Historial</h2>
+                <button id="new-chat-btn">+</button>
+            </div>
+            <ul id="history"></ul>
+        </div>
+
+        <!-- Chat principal -->
+        <div class="chat-container">
+            <h1>Asistente IA</h1>
+            <div id="chat-box"></div>
+
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="Escribe tu mensaje..." />
+                <button id="send-btn">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById("chat-box");
+        const userInput = document.getElementById("user-input");
+        const history = document.getElementById("history");
+        const sendBtn = document.getElementById("send-btn");
+        const newChatBtn = document.getElementById("new-chat-btn");
+
+        let chats = JSON.parse(localStorage.getItem("chats")) || {};
+        let currentChatId = null;
+
+        // Crea un nuevo chat
+        function newChat() {
+            currentChatId = Date.now().toString();
+            chats[currentChatId] = [];
+            updateHistory();
+            chatBox.innerHTML = "";
+            saveChats();
+        }
+
+        //Enter y click para poder enviar el prompt
+        userInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") sendMessage();
+        });
+
+        sendBtn.addEventListener("click", sendMessage);
+        newChatBtn.addEventListener("click", newChat);
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            if (!currentChatId) newChat();
+
+            appendMessage("Tú", message, "user-message");
+            userInput.value = "";
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message }),
+                });
+
+                const data = await response.json();
+                appendMessage("IA", data.response, "bot-message");
+
+                // Guarda el mensaje en el historial local **Mejora: Intentar implementar una bd
+                chats[currentChatId].push({ role: "user", content: message });
+                chats[currentChatId].push({ role: "bot", content: data.response });
+                saveChats();
+                updateHistory();
+            } catch (error) {
+                appendMessage("Error", error, "error-message");
+            }
+        }
+
+     function appendMessage(sender, text, cssClass) {
+    const div = document.createElement("div");
+    div.classList.add(cssClass);
+
+    // Usa la librería de marked.js para convertir Markdown a HTML
+    const formattedText = marked.parse(text);
+
+    div.innerHTML = `<b>${sender}:</b><div class="message-content">${formattedText}</div>`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+    const div = document.createElement("div");
+    div.classList.add(cssClass);
+
+    // Convierte saltos de línea (\n) en <br> y espacios dobles en &nbsp;
+    const formattedText = text
+        .replace(/\n/g, "<br>")
+        .replace(/  /g, "&nbsp;&nbsp;");
+
+    div.innerHTML = `<b>${sender}:</b><br>${formattedText}`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+
+        function saveChats() {
+            localStorage.setItem("chats", JSON.stringify(chats));
+        }
+
+        function updateHistory() {
+            history.innerHTML = "";
+            Object.keys(chats)
+                .sort((a, b) => b - a)
+                .forEach(id => {
+                    const li = document.createElement("li");
+                    const firstMessage = chats[id][0]?.content?.slice(0, 30) || "Nuevo chat";
+                    li.textContent = firstMessage;
+                    li.onclick = () => loadChat(id);
+                    if (id === currentChatId) li.classList.add("active");
+                    history.appendChild(li);
+                });
+        }
+
+        function loadChat(id) {
+            currentChatId = id;
+            chatBox.innerHTML = "";
+            chats[id].forEach(msg => {
+                const cssClass = msg.role === "user" ? "user-message" : "bot-message";
+                appendMessage(msg.role === "user" ? "Tú" : "IA", msg.content, cssClass);
+            });
+            updateHistory();
+        }
+
+        // Cargar historial existente
+        if (Object.keys(chats).length > 0) {
+            const firstId = Object.keys(chats)[0];
+            loadChat(firstId);
+        } else {
+            newChat();
+        }
+    </script>
+</body>
+</html>
