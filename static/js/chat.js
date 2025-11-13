@@ -133,46 +133,60 @@ document.addEventListener("DOMContentLoaded", () => {
     /* ---------------------------
        TAREAS Y RECORDATORIOS
     ----------------------------*/
-    addTaskBtn.addEventListener("click", () => {
-        Swal.fire({
-            title: 'Nueva tarea',
-            html: `
-                <input id="task-title" class="swal2-input" placeholder="Título">
-                <input id="task-date" type="date" class="swal2-input">
-                <input id="task-hour" type="number" min="0" max="23" class="swal2-input" placeholder="Hora (0-23)">
-                <input id="task-minute" type="number" min="0" max="59" class="swal2-input" placeholder="Minutos (0-59)">
-            `,
-            confirmButtonText: 'Agregar',
-            preConfirm: () => {
-                const t = document.getElementById('task-title').value.trim();
-                const d = document.getElementById('task-date').value;
-                const h = parseInt(document.getElementById('task-hour').value);
-                const m = parseInt(document.getElementById('task-minute').value);
+addTaskBtn.addEventListener("click", () => {
+    Swal.fire({
+        title: 'Nueva tarea',
+        html: `
+            <style>
+                .swal2-input { text-align: center; width: 80% !important; margin: 8px auto !important; }
+            </style>
+            <input id="task-title" class="swal2-input" placeholder="Título">
+            <input id="task-date" type="date" class="swal2-input">
+            <input id="task-hour" type="number" min="0" max="23" class="swal2-input" placeholder="Hora (0-23)">
+            <input id="task-minute" type="number" min="0" max="59" class="swal2-input" placeholder="Minutos (0-59)">
+        `,
+        confirmButtonText: 'Agregar',
+        preConfirm: () => {
+            const t = document.getElementById('task-title').value.trim();
+            const d = document.getElementById('task-date').value;
+            const h = parseInt(document.getElementById('task-hour').value);
+            const m = parseInt(document.getElementById('task-minute').value);
 
-                if (!t || !d || isNaN(h) || isNaN(m))
-                    return Swal.showValidationMessage("Completa todos los campos");
+            if (!t || !d || isNaN(h) || isNaN(m)) 
+                return Swal.showValidationMessage("Completa todos los campos");
 
-                if (h < 0 || h > 23)
-                    return Swal.showValidationMessage("Hora inválida (0–23)");
+            if (h < 0 || h > 23) 
+                return Swal.showValidationMessage("Hora inválida (0–23)");
 
-                if (m < 0 || m > 59)
-                    return Swal.showValidationMessage("Minutos inválidos (0–59)");
+            if (m < 0 || m > 59) 
+                return Swal.showValidationMessage("Minutos inválidos (0–59)");
 
-                return { t, d, h, m };
-            }
-        }).then(r => {
-            if (r.isConfirmed) {
-                const { t, d, h, m } = r.value;
-                const date = new Date(`${d}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+            return { t, d, h, m };
+        },
+        didOpen: () => {
+            const inputs = Swal.getPopup().querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        Swal.clickConfirm();
+                    }
+                });
+            });
+        }
+    }).then(r => {
+        if (r.isConfirmed) {
+            const { t, d, h, m } = r.value;
+            const date = new Date(`${d}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
 
-                user_data.tasks.push({ titulo: t, fecha: date.toISOString(), hecho: false });
-                saveUserData();
-                scheduleReminder(t, date);
+            user_data.tasks.push({ titulo: t, fecha: date.toISOString(), hecho: false });
+            saveUserData();
+            scheduleReminder(t, date);
 
-                Swal.fire("Listo", `Tarea para ${date.toLocaleString()}`, "success");
-            }
-        });
+            Swal.fire("Listo", `Tarea para ${date.toLocaleString()}`, "success");
+        }
     });
+});
+
 
     /* ---------------------------
        MINI WIDGET CON CUENTA REGRESIVA
@@ -185,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function lanzarNotificacion(titulo) {
         if (Notification.permission === "granted") {
-            new Notification("⏰ Recordatorio", { body: titulo, icon: "/static/images/icon.png" });
+            new Notification("⏰ Recordatorio", { body: titulo });
         }
     }
 

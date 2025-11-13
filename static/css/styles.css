@@ -27,15 +27,16 @@ body {
 
 /* ==== SIDEBAR PRINCIPAL ==== */
 .sidebar {
-    width: 270px;
+   width: 270px;
     background-color: #1a1a1a;
     display: flex;
     flex-direction: column;
     border-right: 1px solid #333;
-    transition: transform 0.3s ease;
+    transition: width 0.3s ease; 
 }
 
 .sidebar.collapsed {
+    width: 0; /* Colapsa sidebar */
     transform: translateX(-260px);
 }
 
@@ -135,6 +136,8 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px;
+    transition: margin-left 0.3s ease;
+    
 }
 
 .chat-container h1 {
@@ -214,21 +217,18 @@ button:hover {
 /* ==== PANEL DE TAREAS   ==== */
 
 #tasks-panel {
-    position: fixed;
-    top: 0;
-    right: -350px;
-    width: 350px;
-    height: 100%;
+ position: relative; /* relativo dentro de app-container */
+    width: 0;
+    flex-shrink: 0; /* que no se comprima el chat */
     background: #1b1b1b;
     border-left: 1px solid #333;
-    transition: right 0.3s ease;
-    z-index: 9999;
-    padding: 20px;
-    overflow-y: auto;
+    overflow: hidden;
+    transition: width 0.3s ease;
 }
 
 #tasks-panel.tasks-sidebar-open {
     right: 0;
+     width: 350px;
 }
 
 .close-tasks-btn {
