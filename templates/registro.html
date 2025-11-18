@@ -19,15 +19,20 @@
             <div class="mensaje" style="color:#00ff99; margin-bottom:10px;">{{ mensaje }}</div>
         {% endif %}
 
-        <form action="{{ url_for('procesar_registro') }}" method="POST">
-            <label for="correo">Correo</label>
-            <input type="text" id="correo" name="correo" placeholder="Correo" required>
+      <form action="{{ url_for('procesar_registro') }}" method="POST">
 
-            <label for="contrasena">Contraseña</label>
-            <input type="password" id="contrasena" name="contrasena" placeholder="Contraseña" required>
+    <label for="nombreUsuario">Nombre de usuario</label>
+    <input type="text" id="nombreUsuario" name="nombreUsuario" placeholder="Tu nombre" required>
 
-            <button type="submit">Registrar</button>
-        </form>
+    <label for="correo">Correo</label>
+    <input type="text" id="correo" name="correo" placeholder="Correo" required>
+
+    <label for="contrasena">Contraseña</label>
+    <input type="password" id="contrasena" name="contrasena" placeholder="Contraseña" required>
+
+    <button type="submit">Registrar</button>
+</form>
+
 
         <p style="margin-top:15px;">¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión</a></p>
     </div>

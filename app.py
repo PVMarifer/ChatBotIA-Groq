@@ -5,14 +5,14 @@ app = Flask(__name__)
 app.secret_key = "Clave"  
 
 # Diccionario en memoria para usuarios
-
 usuarios = {}
 
 # CONFIGURACIÓN DE GROQ
-
 client = Groq(api_key="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")
 
-# RUTAS LOGIN / REGISTRO / CONTRASEÑA
+# -----------------------
+# LOGIN / REGISTRO / CONTRASEÑA
+# -----------------------
 
 @app.route("/")
 def login():
@@ -25,9 +25,15 @@ def validar_login():
 
     if correo in usuarios and usuarios[correo]["password"] == contrasena:
         session["usuario"] = correo
+        session["nombre"] = usuarios[correo]["nombre"]
         return redirect("/index")
     else:
         return render_template("login.html", error="Credenciales inválidas")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
 
 @app.route("/contrasenna")
 def forgot():
@@ -56,11 +62,16 @@ def register():
 def procesar_registro():
     correo = request.form.get("correo")
     contrasena = request.form.get("contrasena")
+    nombreUsuario = request.form.get("nombreUsuario")
 
     if correo in usuarios:
         return render_template("registro.html", error="Este correo ya está registrado.")
 
-    usuarios[correo] = {"password": contrasena}
+    usuarios[correo] = {
+        "password": contrasena,
+        "nombre": nombreUsuario
+    }
+
     return render_template("login.html", mensaje="Registro exitoso. Ahora puedes iniciar sesión.")
 
 @app.route("/index")
@@ -80,11 +91,12 @@ def chat():
             return jsonify({"error": "Falta 'message'"}), 400
 
         user_message = data["message"]
+        user_name = session.get("nombre", "usuario")
 
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
-                {"role": "system", "content": "Eres un asistente útil y amable."},
+                {"role": "system", "content": f"Eres un asistente útil y amable. El usuario se llama {user_name}."},
                 {"role": "user", "content": user_message}
             ]
         )

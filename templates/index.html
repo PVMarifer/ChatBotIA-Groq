@@ -27,14 +27,24 @@
 
         <!-- CHAT PRINCIPAL -->
         <div class="chat-container">
-            <h1>Asistente IA</h1>
+
+            <!-- Saludo personalizado -->
+            <h1>
+                Asistente IA
+                {% if session.get('nombre') %}
+                    <span style="font-size: 22px; color: #00ffc3; margin-left: 10px;">
+                        — Hola, {{ session['nombre'] }} 👋
+                    </span>
+                {% endif %}
+            </h1>
+
             <div id="chat-box"></div>
 
             <div class="input-container">
                 <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
                 <button id="send-btn">Enviar</button>
-                <button id="add-task-btn">📅</button>  <!-- Agregar TAREAS // Cambiar Icóno**-->
-                <button id="view-tasks-btn">🗂️</button>  <!-- PANEL DE TAREAS -->
+                <button id="add-task-btn">📅</button>
+                <button id="view-tasks-btn">🗂️</button>
             </div>
         </div>
 
@@ -46,6 +56,7 @@
         </div>
 
     </div>
+
     <div id="mini-warning"></div>
 
     <script src="/static/js/chat.js"></script>
