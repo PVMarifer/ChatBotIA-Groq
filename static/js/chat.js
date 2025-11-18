@@ -91,13 +91,25 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    function appendMessage(sender, text, cssClass) {
-        const div = document.createElement("div");
-        div.classList.add(cssClass);
-        div.innerHTML = `<b>${sender}:</b><div class="message-content">${marked.parse(text)}</div>`;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
+function appendMessage(sender, text, cssClass) {
+    let contenido = "";
+
+    try {
+        contenido = marked.parse((text ?? "").toString());
+    } catch (e) {
+        contenido = (text ?? "").toString();
     }
+
+    const div = document.createElement("div");
+    div.classList.add(cssClass);
+    div.innerHTML = `
+        <b>${sender}:</b>
+        <div class="message-content">${contenido}</div>
+    `;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
 
     async function sendMessage() {
         const msg = userInput.value.trim();
