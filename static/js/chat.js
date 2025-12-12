@@ -78,8 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 li.textContent = firstMsg;
 
                 li.onclick = () => loadChat(id);
-
-                // BOTÓN BASURERO PARA CHATS
                 const trashBtn = document.createElement("button");
                 trashBtn.innerHTML = '🗑️';
                 trashBtn.classList.add("history-trash-btn");

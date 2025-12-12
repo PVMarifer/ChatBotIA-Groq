@@ -342,9 +342,9 @@ body {
 /* ==== MINI WIDGET ==== */
 #mini-warning {
     position: fixed;
-    top: 60px; /* debajo del logout */
+    top: 60px; 
     right: 10px;
-    background: #00bfa6; /* turquesa */
+    background: #00bfa6; 
     padding: 12px 15px;
     border-radius: 10px;
     color: black;
