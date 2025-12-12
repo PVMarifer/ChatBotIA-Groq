@@ -6,6 +6,10 @@
     <link rel="stylesheet" href="/static/css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-p6OaVn7Cj9K+gK0XK7kHUl1+DB0/OvRZh+L/Zd50E1F6pU5KxZ2nYfjJ3vfUZrW2J1N8oP7Gn9px1+q8qM6P0w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
 </head>
 
 <body>
@@ -28,7 +32,6 @@
         <!-- CHAT PRINCIPAL -->
         <div class="chat-container">
 
-            <!-- Saludo personalizado -->
             <h1>
                 Asistente IA
                 {% if session.get('nombre') %}
@@ -55,9 +58,16 @@
             <ul id="tasks-list"></ul>
         </div>
 
+        <!-- LOGOUT -->
+        <button id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i></button>
+
     </div>
 
     <div id="mini-warning"></div>
+
+    <script>
+        const USER_ID = "{{ session.get('usuario') }}";
+    </script>
 
     <script src="/static/js/chat.js"></script>
 
