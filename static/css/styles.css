@@ -47,7 +47,7 @@ body {
     position: fixed;
     top: 10px;
     left: 10px;
-    z-index: 10001; /* siempre arriba */
+    z-index: 10001;
     background-color: #00bfa6;
     border-radius: 50%;
     width: 40px;
@@ -121,7 +121,7 @@ body {
     position: relative;
     background: #2b2b2b;
     padding: 10px;
-    padding-right: 35px; /* espacio para el basurero */
+    padding-right: 35px;
     border-radius: 8px;
     cursor: pointer;
     white-space: nowrap;
@@ -145,7 +145,6 @@ body {
     font-weight: bold;
 }
 
-/* BOTÓN DE BORRAR EN HISTORIAL */
 .history-trash-btn {
     position: absolute;
     right: 10px;
@@ -167,12 +166,12 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 40px;
     transition: all 0.3s ease;
 }
 
 .app-container.sidebar-collapsed .chat-container {
-    margin-left: 0; /* expande el chat al colapsar sidebar */
+    margin-left: 0;
 }
 
 .chat-container h1 {
@@ -287,11 +286,10 @@ body {
 /* ==== LISTA DE TAREAS ==== */
 #tasks-list li {
     position: relative;
-    padding-right: 35px; /* espacio para el basurero */
+    padding-right: 35px;
     margin-bottom: 8px;
 }
 
-/* BOTÓN DE BORRAR EN TAREAS */
 #tasks-list li .delete-btn {
     position: absolute;
     right: 10px;
@@ -308,7 +306,7 @@ body {
     color: #ff0000;
 }
 
-/* Logout botón */
+/* ==== LOGOUT ==== */
 #logout-btn {
     position: fixed;
     top: 10px;
@@ -331,6 +329,17 @@ body {
 #logout-btn:hover {
     background-color: #00d1b2;
 }
+
+#logout-btn i {
+    font-size: 20px;
+    color: black;
+}
+
+#logout-btn:hover i {
+    color: #00ffc3;
+}
+
+/* ==== MINI WIDGET ==== */
 #mini-warning {
     position: fixed;
     top: 60px; /* debajo del logout */
@@ -338,16 +347,16 @@ body {
     background: #00bfa6; /* turquesa */
     padding: 12px 15px;
     border-radius: 10px;
-    color: black; /* texto negro */
+    color: black;
     display: none;
     z-index: 9999;
     box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
 
 #mini-warning-close {
-    background: transparent; /* sin fondo */
+    background: transparent;
     border: none;
-    color: black;            /* X negra */
+    color: black; /* X negra */
     font-size: 18px;
     font-weight: bold;
     cursor: pointer;
@@ -356,5 +365,5 @@ body {
 }
 
 #mini-warning-close:hover {
-    color: #333; /* negro más oscuro al pasar el mouse */
+    color: #333;
 }
