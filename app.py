@@ -1,10 +1,30 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
 from groq import Groq
 from pymongo import MongoClient
+from flask_mail import Mail, Message
+from werkzeug.security import generate_password_hash, check_password_hash
 import time
+import secrets
+
+# -----------------------
+# APP
+# -----------------------
 
 app = Flask(__name__)
 app.secret_key = "Clave"
+
+# -----------------------
+# MAIL
+# -----------------------
+
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = "asistente.ia.proyecto@gmail.com"
+app.config["MAIL_PASSWORD"] = "ujwe gtab xqif kvgc"
+app.config["MAIL_DEFAULT_SENDER"] = "asistente.ia.proyecto@gmail.com"
+
+mail = Mail(app)
 
 # -----------------------
 # MONGO DB
@@ -16,17 +36,16 @@ mongo_client = MongoClient(
 
 db = mongo_client["ChatBotDB"]
 conversaciones = db["conversaciones"]
-usuarios_db = db["usuarios"]  # si querés guardar usuarios después aquí
-
+usuarios_db = db["usuarios"]
 
 # -----------------------
 # GROQ
 # -----------------------
 
-client = Groq(api_key="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")
+client = Groq(api_key="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")
 
 # -----------------------
-# FUNCIONES DE MEMORIA
+# MEMORIA
 # -----------------------
 
 def guardar_mensaje(usuario, role, message):
@@ -37,7 +56,6 @@ def guardar_mensaje(usuario, role, message):
         "timestamp": time.time()
     })
 
-
 def obtener_historial(usuario, limite=10):
     historial = list(
         conversaciones
@@ -45,79 +63,150 @@ def obtener_historial(usuario, limite=10):
         .sort("timestamp", -1)
         .limit(limite)
     )
+    historial.reverse()
+    return [{"role": h["role"], "content": h["message"]} for h in historial]
 
-    historial.reverse()  # orden normal
-
-    mensajes = []
-    for h in historial:
-        mensajes.append({
-            "role": h["role"],
-            "content": h["message"]
-        })
-
-    return mensajes
-
+def generar_token():
+    return secrets.token_urlsafe(32)
 
 # -----------------------
-# USUARIOS EN MEMORIA (POR AHORA)
-# -----------------------
-
-usuarios = {}
-
-
-# -----------------------
-# RUTAS LOGIN / REGISTRO
+# LOGIN / LOGOUT
 # -----------------------
 
 @app.route("/")
 def login():
     return render_template("login.html")
 
-
 @app.route("/validar_login", methods=["POST"])
 def validar_login():
     correo = request.form.get("correo")
     contrasena = request.form.get("contrasena")
 
-    if correo in usuarios and usuarios[correo]["password"] == contrasena:
-        session["usuario"] = correo
-        session["nombre"] = usuarios[correo]["nombre"]
-        return redirect("/index")
-    else:
-        return render_template("login.html", error="Credenciales inválidas")
+    usuario = usuarios_db.find_one({"correo": correo})
 
+    if usuario:
+        pwd_db = usuario["password"]
+
+        if pwd_db == contrasena or check_password_hash(pwd_db, contrasena):
+            session["usuario"] = usuario["correo"]
+            session["nombre"] = usuario["nombre"]
+            return redirect("/index")
+
+    return render_template("login.html", error="Credenciales inválidas")
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
 
+# -----------------------
+# RECUPERAR CONTRASEÑA
+# -----------------------
 
 @app.route("/contrasenna")
 def forgot():
     return render_template("contrasenna.html")
 
-
 @app.route("/procesar_contrasenna", methods=["POST"])
 def procesar_contrasenna():
     correo = request.form.get("correo")
+    usuario = usuarios_db.find_one({"correo": correo})
 
-    if correo in usuarios:
-        return render_template(
-            "contrasenna.html",
-            mensaje="Si el correo existe, recibirás un enlace para recuperar tu cuenta."
-        )
-    else:
-        return render_template(
-            "contrasenna.html",
-            error="El correo no está registrado."
+    if usuario:
+        token = generar_token()
+        expira = time.time() + 3600
+
+        usuarios_db.update_one(
+            {"correo": correo},
+            {"$set": {
+                "reset_token": token,
+                "reset_expira": expira
+            }}
         )
 
+        link = f"http://localhost:5000/reset_password/{token}"
+
+        msg = Message(
+            subject="Password recovery",
+            recipients=[correo]
+        )
+
+        msg.body = (
+            "¡Hola!\n\n"
+            "Recibimos una solicitud para restaurar tu contraseña. \n\n"
+            "Usa este link (valido por 1 hora):\n"
+            f"{link}\n\n"
+            "Si no has sido tú, por favor ignora este mensaje.\n\n"
+            "Asistente de IA"
+        )
+
+        try:
+            mail.send(msg)
+        except Exception as e:
+            print("ERROR SMTP:", repr(e))
+
+    return render_template(
+        "contrasenna.html",
+        mensaje="Si el correo existe, se te enviará un correo de verificación"
+    )
+
+@app.route("/reset_password/<token>")
+def reset_password(token):
+    usuario = usuarios_db.find_one({
+        "reset_token": token,
+        "reset_expira": {"$gt": time.time()}
+    })
+
+    if not usuario:
+        return "Enlace inválido o expirado"
+
+    return render_template("reset_password.html", token=token)
+
+@app.route("/guardar_nueva_contrasena", methods=["POST"])
+def guardar_nueva_contrasena():
+    token = request.form.get("token")
+    nueva = request.form.get("password")
+    confirmar = request.form.get("password_confirm")
+
+    #Verificar que coincidan
+    if nueva != confirmar:
+        return render_template(
+            "reset_password.html",
+            token=token,
+            error="Las contraseñas no coinciden"
+        )
+
+    #Verificar token válido
+    usuario = usuarios_db.find_one({
+        "reset_token": token,
+        "reset_expira": {"$gt": time.time()}
+    })
+
+    if not usuario:
+        return "Token inválido o expirado"
+
+    #Guardar contraseña
+    usuarios_db.update_one(
+        {"_id": usuario["_id"]},
+        {
+            "$set": {
+                "password": generate_password_hash(nueva)
+            },
+            "$unset": {
+                "reset_token": "",
+                "reset_expira": ""
+            }
+        }
+    )
+
+    return redirect("/")
+# -----------------------
+# REGISTRO
+# -----------------------
 
 @app.route("/registro")
 def register():
     return render_template("registro.html")
-
 
 @app.route("/procesar_registro", methods=["POST"])
 def procesar_registro():
@@ -125,19 +214,23 @@ def procesar_registro():
     contrasena = request.form.get("contrasena")
     nombreUsuario = request.form.get("nombreUsuario")
 
-    if correo in usuarios:
+    if usuarios_db.find_one({"correo": correo}):
         return render_template("registro.html", error="Este correo ya está registrado.")
 
-    usuarios[correo] = {
-        "password": contrasena,
-        "nombre": nombreUsuario
-    }
+    usuarios_db.insert_one({
+        "correo": correo,
+        "password": generate_password_hash(contrasena),
+        "nombre": nombreUsuario,
+        "creado": time.time()
+    })
 
-    return render_template("login.html", mensaje="Registro exitoso. Ahora puedes iniciar sesión.")
-
+    return render_template(
+        "login.html",
+        mensaje="Registro exitoso. Ahora puedes iniciar sesión."
+    )
 
 # -----------------------
-# PÁGINA PRINCIPAL
+# INDEX
 # -----------------------
 
 @app.route("/index")
@@ -146,56 +239,40 @@ def index():
         return redirect("/")
     return render_template("index.html")
 
-
 # -----------------------
-# CHAT CON MEMORIA
+# CHAT
 # -----------------------
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    try:
-        # recibir datos del frontend
-        data = request.get_json(force=True)
-        if not data or "message" not in data:
-            return jsonify({"error": "Falta 'message'"}), 400
+    data = request.get_json(force=True)
+    user_message = data.get("message")
 
-        user_message = data["message"]
-        nombre = session.get("nombre", "usuario")
-        correo = session.get("usuario")
+    correo = session.get("usuario")
+    nombre = session.get("nombre", "usuario")
 
-        # guardar mensaje del usuario
-        guardar_mensaje(correo, "user", user_message)
+    guardar_mensaje(correo, "user", user_message)
+    historial = obtener_historial(correo)
 
-        # recuperar historial previo
-        historial = obtener_historial(correo, limite=10)
+    messages = [
+        {"role": "system", "content": f"Eres un asistente amigable. El usuario se llama {nombre}."}
+    ]
 
-        # construir mensaje con memoria incluida
-        messages = [
-            {"role": "system", "content": f"Eres un asistente amigable. El usuario se llama {nombre}."}
-        ]
+    messages.extend(historial)
+    messages.append({"role": "user", "content": user_message})
 
-        messages.extend(historial)
-        messages.append({"role": "user", "content": user_message})
+    completion = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=messages
+    )
 
-        # generar respuesta con Groq
-        completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=messages
-        )
+    respuesta = completion.choices[0].message.content
+    guardar_mensaje(correo, "assistant", respuesta)
 
-        bot_response = completion.choices[0].message.content
-
-        # guardar respuesta del bot
-        guardar_mensaje(correo, "assistant", bot_response)
-
-        return jsonify({"response": bot_response})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
+    return jsonify({"response": respuesta})
 
 # -----------------------
-# INICIO DEL SERVIDOR
+# RUN
 # -----------------------
 
 if __name__ == "__main__":

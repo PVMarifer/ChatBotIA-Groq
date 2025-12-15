@@ -3,74 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <title>Asistente IA</title>
+
     <link rel="stylesheet" href="/static/css/styles.css">
+
+    <!-- Librerías -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-p6OaVn7Cj9K+gK0XK7kHUl1+DB0/OvRZh+L/Zd50E1F6pU5KxZ2nYfjJ3vfUZrW2J1N8oP7Gn9px1+q8qM6P0w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 
 <body>
-    <div class="app-container">
 
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <button id="hamburger-btn" class="circle-btn">☰</button>
-                <h2>Chats</h2>
-            </div>
+<div class="app-container">
 
-            <ul id="history"></ul>
-
-            <div class="sidebar-buttons">
-                <button id="new-chat-btn" class="circle-btn">+</button>
-            </div>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <button id="hamburger-btn" class="circle-btn">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <h2>Chats</h2>
         </div>
 
-        <!-- CHAT PRINCIPAL -->
-        <div class="chat-container">
+        <ul id="history"></ul>
 
-            <h1>
-                Asistente IA
-                {% if session.get('nombre') %}
-                    <span style="font-size: 22px; color: #00ffc3; margin-left: 10px;">
-                        — Hola, {{ session['nombre'] }} 👋
-                    </span>
-                {% endif %}
-            </h1>
-
-            <div id="chat-box"></div>
-
-            <div class="input-container">
-                <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
-                <button id="send-btn">Enviar</button>
-                <button id="add-task-btn">📅</button>
-                <button id="view-tasks-btn">🗂️</button>
-            </div>
+        <div class="sidebar-buttons">
+            <button id="new-chat-btn" class="circle-btn">
+                <i class="fa-solid fa-plus"></i>
+            </button>
         </div>
-
-        <!-- PANEL DE TAREAS -->
-        <div id="tasks-panel" class="tasks-panel">
-            <button class="close-tasks-btn">✖</button>
-            <h2>Tareas pendientes</h2>
-            <ul id="tasks-list"></ul>
-        </div>
-
-        <!-- LOGOUT -->
-        <button id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i></button>
-
     </div>
 
-    <!-- MINI WIDGET -->
-    <div id="mini-warning"></div>
+    <!-- CHAT PRINCIPAL -->
+    <div class="chat-container">
 
-    <script>
-        const USER_ID = "{{ session.get('usuario') }}";
-    </script>
+        <h1>
+            Asistente IA
+            {% if session.get('nombre') %}
+                <span style="font-size: 22px; color: #00ffc3; margin-left: 10px;">
+                    — Hola, {{ session['nombre'] }} 👋
+                </span>
+            {% endif %}
+        </h1>
 
-    <script src="/static/js/chat.js"></script>
+        <div id="chat-box"></div>
+
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
+            <button id="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+            <button id="add-task-btn"><i class="fa-solid fa-calendar-plus"></i></button>
+            <button id="view-tasks-btn"><i class="fa-solid fa-list-check"></i></button>
+        </div>
+    </div>
+
+    <!-- PANEL KANBAN DESPLEGABLE -->
+    <div id="tasks-panel" class="tasks-panel">
+
+        <div class="tasks-header">
+            <h2>📋 Tareas</h2>
+            <button class="close-tasks-btn">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="kanban-board">
+
+            <!-- PENDIENTES -->
+            <div class="kanban-column">
+                <h3 data-toggle>🕒 Pendientes</h3>
+                <ul id="tasks-pendientes"></ul>
+            </div>
+
+            <!-- EN PROGRESO -->
+            <div class="kanban-column">
+                <h3 data-toggle>🔄 En progreso</h3>
+                <ul id="tasks-progreso"></ul>
+            </div>
+
+            <!-- COMPLETADAS -->
+            <div class="kanban-column">
+                <h3 data-toggle>✅ Completadas</h3>
+                <ul id="tasks-completadas"></ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- LOGOUT -->
+    <button id="logout-btn">
+        <i class="fa-solid fa-right-from-bracket"></i>
+    </button>
+
+</div>
+
+<!-- MINI WIDGET RECORDATORIO -->
+<div id="mini-warning"></div>
+
+<!-- USER ID DESDE FLASK -->
+<script>
+    const USER_ID = "{{ session.get('usuario') }}";
+</script>
+
+<script src="/static/js/chat.js"></script>
 
 </body>
 </html>

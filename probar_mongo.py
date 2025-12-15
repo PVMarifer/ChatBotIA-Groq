@@ -4,6 +4,6 @@ client = MongoClient("mongodb+srv://marferpv_db_user:JW9ntXFTCGu2tpio@paradigmas
 
 try:
     client.admin.command("ping")
-    print("🔥 Conexión a MongoDB exitosa.")
+    print("Conexión a MongoDB exitosa.")
 except Exception as e:
-    print("❌ Error conectando a MongoDB:", e)
+    print("Error conectando a MongoDB:", e)

@@ -12,6 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const tasksList = document.getElementById("tasks-list");
     const closeTasksBtn = document.querySelector(".close-tasks-btn");
     const logoutBtn = document.getElementById("logout-btn");
+    const tasksPendientes = document.getElementById("tasks-pendientes");
+    const tasksProgreso = document.getElementById("tasks-progreso");
+    const tasksCompletadas = document.getElementById("tasks-completadas");
 
     // -----------------------
     // STORAGE POR USUARIO
@@ -30,16 +33,16 @@ document.addEventListener("DOMContentLoaded", () => {
     function saveChats() { localStorage.setItem(storageKey, JSON.stringify(chats)); }
     function saveUserData() { localStorage.setItem(userDataKey, JSON.stringify(user_data)); }
 
-    // -----------------------
-    // SIDEBAR / HAMBURGER
-    // -----------------------
+    // 
+    // SIDEBAR / BTN-HAMBURGER
+    // 
     hamburgerBtn.addEventListener("click", () => {
         sidebar.classList.toggle("collapsed");
     });
 
-    // -----------------------
+    // 
     // HISTORIAL / CHATS
-    // -----------------------
+    // 
     function newChat() {
         currentChatId = Date.now().toString();
         chats[currentChatId] = [];
@@ -109,9 +112,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    // -----------------------
+    // 
     // RENDER MENSAJES
-    // -----------------------
+    // 
     function appendMessage(sender, text, cssClass) {
         let contenido = "";
         try { contenido = marked.parse((text ?? "").toString()); }
@@ -127,9 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // -----------------------
+    // 
     // ENVÍO DE MENSAJES
-    // -----------------------
+    // 
     async function sendMessage() {
         const msg = userInput.value.trim();
         if (!msg) return;
@@ -166,9 +169,10 @@ document.addEventListener("DOMContentLoaded", () => {
     userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
     newChatBtn.addEventListener("click", newChat);
 
-    // -----------------------
+    // 
     // TAREAS Y RECORDATORIOS
-    // -----------------------
+    // 
+
     const alarmaSonido = new Audio("/static/sounds/alarma.mp3");
     if (Notification.permission !== "granted") Notification.requestPermission();
 
@@ -280,7 +284,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (r.isConfirmed && r.value) {
             const { t, d, h, m } = r.value;
             const date = new Date(`${d}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
-            user_data.tasks.push({ titulo: t, fecha: date.toISOString(), hecho: false });
+            user_data.tasks.push({ 
+                titulo: t,
+                fecha: date.toISOString(),
+                estado: "pendiente" // pendiente | progreso | completada
+                });
             saveUserData();
             scheduleReminder(t, date);
             Swal.fire("Listo", `Tarea para ${date.toLocaleString()}`, "success");
@@ -288,10 +296,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-
-    // -----------------------
+     // 
     // PANEL DE TAREAS
-    // -----------------------
+    // 
+
     viewTasksBtn.addEventListener("click", () => {
         renderTasks();
         tasksPanel.classList.add("tasks-sidebar-open");
@@ -305,30 +313,47 @@ document.addEventListener("DOMContentLoaded", () => {
         logoutBtn.style.visibility = "visible";
     });
 
-    function renderTasks() {
-        tasksList.innerHTML = "";
-        const activos = user_data.tasks.filter(t => !t.hecho);
-        if (activos.length === 0) {
-            tasksList.innerHTML = "<li>No hay tareas</li>";
-            return;
-        }
+function renderTasks() {
+    tasksPendientes.innerHTML = "";
+    tasksProgreso.innerHTML = "";
+    tasksCompletadas.innerHTML = "";
 
-        activos.forEach((task,index) => {
-            const li = document.createElement("li");
-            const fecha = new Date(task.fecha).toLocaleString();
-            li.innerHTML = `<strong>${task.titulo}</strong><br><small>${fecha}</small><button class="delete-btn">🗑️</button>`;
-            li.querySelector(".delete-btn").addEventListener("click", () => {
-                user_data.tasks.splice(index, 1);
+    user_data.tasks.forEach((task, index) => {
+        const li = document.createElement("li");
+        const fecha = new Date(task.fecha).toLocaleString();
+
+        li.innerHTML = `
+            <strong>${task.titulo}</strong><br>
+            <small>${fecha}</small><br>
+            <button data-action="pendiente">🕒</button>
+            <button data-action="progreso">🔄</button>
+            <button data-action="completada">✅</button>
+            <button data-delete>🗑️</button>
+        `;
+
+        li.querySelectorAll("button[data-action]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                task.estado = btn.dataset.action;
                 saveUserData();
                 renderTasks();
             });
-            tasksList.appendChild(li);
         });
-    }
 
-    // -----------------------
+        li.querySelector("[data-delete]").addEventListener("click", () => {
+            user_data.tasks.splice(index, 1);
+            saveUserData();
+            renderTasks();
+        });
+
+        if (task.estado === "pendiente") tasksPendientes.appendChild(li);
+        else if (task.estado === "progreso") tasksProgreso.appendChild(li);
+        else tasksCompletadas.appendChild(li);
+    });
+}
+
+    // 
     // INICIALIZACIÓN
-    // -----------------------
+    // 
     function init() {
         if (Object.keys(chats).length === 0) newChat();
         else {
@@ -346,9 +371,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     init();
 
-    // -----------------------
+    // 
     // ACCIÓN DE LOGOUT
-    // -----------------------
+    // 
     logoutBtn.addEventListener("click", () => {
         Swal.fire({
             title: "¿Cerrar sesión?",

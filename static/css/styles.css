@@ -253,19 +253,20 @@ body {
 .tasks-panel {
     position: fixed;
     top: 0;
-    right: -400px;
-    width: 350px;
-    height: 100%;
-    background-color: #1a1a1a;
-    border-left: 1px solid #333;
-    padding: 20px;
+    right: -420px;
+    width: 420px;
+    height: 100vh;
+    background: #0f0f0f;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.6);
     transition: right 0.3s ease;
-    z-index: 998;
+    z-index: 200;
+    padding: 15px;
 }
 
-.tasks-sidebar-open {
+.tasks-panel.tasks-sidebar-open {
     right: 0;
 }
+
 
 .tasks-panel h2 {
     color: #00bfa6;
@@ -366,4 +367,135 @@ body {
 
 #mini-warning-close:hover {
     color: #333;
+}
+
+/* ============================= */
+/* ==== RESET PASSWORD VIEW ==== */
+/* ============================= */
+
+.login-box {
+    background: #1e1e1e;
+    border-radius: 14px;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.65);
+    animation: fadeInScale 0.4s ease;
+}
+
+.login-box h2 {
+    color: #00bfa6;
+    font-weight: 600;
+}
+
+.login-box label {
+    display: block;
+    margin-bottom: 6px;
+    color: #bdbdbd;
+    font-size: 0.95rem;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background-color: #2b2b2b;
+    color: #f1f1f1;
+    outline: none;
+    transition: box-shadow 0.3s;
+}
+
+.login-box input:focus {
+    box-shadow: 0 0 0 2px #00bfa6;
+}
+
+.login-box button {
+    background-color: #00bfa6;
+    color: black;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.15s;
+}
+
+.login-box button:hover {
+    background-color: #00d1b2;
+    transform: translateY(-1px);
+}
+
+.login-box a {
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.login-box a:hover {
+    text-decoration: underline;
+}
+
+/* ==== ICONO MOSTRAR CONTRASEÑA ==== */
+.toggle-password {
+    font-size: 16px;
+    opacity: 0.8;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.toggle-password:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* ==== ANIMACIÓN SUAVE ==== */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.kanban-board {
+    display: flex;
+    gap: 15px;
+    height: 100%;
+}
+
+.kanban-column {
+    flex: 1;
+    background: #151515;
+    border-radius: 10px;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.kanban-column h3 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #00ffc3;
+}
+
+.kanban-column ul {
+    list-style: none;
+    padding: 0;
+}
+
+.kanban-column li {
+    background: #1f1f1f;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.kanban-column button {
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
