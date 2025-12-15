@@ -235,21 +235,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }, delay);
     }
 
-  addTaskBtn.addEventListener("click", () => {
+addTaskBtn.addEventListener("click", () => {
     Swal.fire({
         title: 'Nueva tarea',
         html: `
-            <style>
-                .swal2-input { text-align: center; width: 80% !important; margin: 8px auto !important; }
-                .swal2-select { width: 80% !important; margin: 8px auto !important; }
-            </style>
             <input id="task-title" class="swal2-input" placeholder="Título">
             <input id="task-date" type="date" class="swal2-input">
             <input id="task-hour" type="number" min="0" max="23" class="swal2-input" placeholder="Hora (0-23)">
             <input id="task-minute" type="number" min="0" max="59" class="swal2-input" placeholder="Minutos (0-59)">
         `,
-        showCloseButton: true,     
-        closeButtonHtml: '✖',     
+        showCloseButton: true,
+        closeButtonHtml: '✖',
         confirmButtonText: 'Agregar',
         focusConfirm: false,
         preConfirm: () => {
@@ -270,12 +266,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 return false;
             }
 
+            const fechaSeleccionada = new Date(`${d}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`);
+            const ahora = new Date();
+            if (fechaSeleccionada < ahora) {
+                Swal.showValidationMessage("No puedes poner tareas en el pasado");
+                return false;
+            }
+
             return { t, d, h, m };
         },
         didOpen: () => {
             const inputs = Swal.getPopup().querySelectorAll('input');
             inputs.forEach(input => {
-                input.addEventListener('keydown', (e) => {
+                input.addEventListener('keydown', e => {
                     if (e.key === 'Enter') Swal.clickConfirm();
                 });
             });
@@ -287,8 +290,8 @@ document.addEventListener("DOMContentLoaded", () => {
             user_data.tasks.push({ 
                 titulo: t,
                 fecha: date.toISOString(),
-                estado: "pendiente" // pendiente | progreso | completada
-                });
+                estado: "pendiente"
+            });
             saveUserData();
             scheduleReminder(t, date);
             Swal.fire("Listo", `Tarea para ${date.toLocaleString()}`, "success");
