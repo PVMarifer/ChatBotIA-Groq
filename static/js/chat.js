@@ -314,37 +314,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 function renderTasks() {
+    const tasksPendientes = document.getElementById("tasks-pendientes");
+    const tasksProgreso = document.getElementById("tasks-progreso");
+    const tasksCompletadas = document.getElementById("tasks-completadas");
+
     tasksPendientes.innerHTML = "";
     tasksProgreso.innerHTML = "";
     tasksCompletadas.innerHTML = "";
 
     user_data.tasks.forEach((task, index) => {
         const li = document.createElement("li");
-        const fecha = new Date(task.fecha).toLocaleString();
 
         li.innerHTML = `
-            <strong>${task.titulo}</strong><br>
-            <small>${fecha}</small><br>
-            <button data-action="pendiente">🕒</button>
-            <button data-action="progreso">🔄</button>
-            <button data-action="completada">✅</button>
-            <button data-delete>🗑️</button>
+            <div class="task-info">
+                <strong>${task.titulo}</strong><br>
+                <small>${new Date(task.fecha).toLocaleString()}</small>
+            </div>
+            <div class="task-actions">
+                <i class="fa-solid fa-clock kanban-icon" data-action="pendiente" title="Pendiente"></i>
+                <i class="fa-solid fa-spinner kanban-icon" data-action="progreso" title="En progreso"></i>
+                <i class="fa-solid fa-check kanban-icon" data-action="completada" title="Completada"></i>
+                <i class="fa-solid fa-trash-can kanban-icon" data-delete title="Eliminar"></i>
+            </div>
         `;
 
-        li.querySelectorAll("button[data-action]").forEach(btn => {
-            btn.addEventListener("click", () => {
-                task.estado = btn.dataset.action;
+        // Eventos de cambio de estado
+        li.querySelectorAll(".kanban-icon[data-action]").forEach(icon => {
+            icon.addEventListener("click", () => {
+                task.estado = icon.dataset.action;
                 saveUserData();
                 renderTasks();
             });
         });
 
-        li.querySelector("[data-delete]").addEventListener("click", () => {
+        // Evento eliminar
+        li.querySelector(".kanban-icon[data-delete]").addEventListener("click", () => {
             user_data.tasks.splice(index, 1);
             saveUserData();
             renderTasks();
         });
 
+        // Agregar a la columna correspondiente
         if (task.estado === "pendiente") tasksPendientes.appendChild(li);
         else if (task.estado === "progreso") tasksProgreso.appendChild(li);
         else tasksCompletadas.appendChild(li);

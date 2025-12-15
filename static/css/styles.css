@@ -482,12 +482,6 @@ body {
     padding: 0;
 }
 
-.kanban-column li {
-    background: #1f1f1f;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 8px;
-}
 
 .kanban-column button {
     margin-right: 5px;
@@ -498,4 +492,33 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.kanban-column li {
+    display: flex;
+    flex-direction: column; /* contenido arriba, íconos abajo */
+    justify-content: flex-start;
+    background: #1f1f1f;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.task-actions {
+    display: flex;
+    justify-content: flex-end; /* íconos alineados a la derecha */
+    gap: 8px;
+    margin-top: 8px; /* separación del contenido de la tarea */
+}
+
+.kanban-icon {
+    cursor: pointer;
+    font-size: 18px;
+    color: #e0e0e0;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.kanban-icon:hover {
+    color: #00ffc3;
+    transform: scale(1.2);
 }

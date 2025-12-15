@@ -12,6 +12,96 @@
 
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        /* --- Kanban desplegable y columnas plegables --- */
+        .tasks-panel {
+            position: fixed;
+            top: 0;
+            right: -400px; /* oculto por defecto */
+            width: 400px;
+            height: 100%;
+            background: #121212;
+            color: #e0e0e0;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.5);
+            transition: right 0.3s;
+            overflow-y: auto;
+            z-index: 1000;
+            padding: 15px;
+        }
+
+        .tasks-sidebar-open {
+            right: 0;
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .kanban-board {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .kanban-column {
+            background: #1f1f1f;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .kanban-column h3 {
+            cursor: pointer;
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .kanban-column ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: block;
+        }
+
+        .kanban-column.collapsed ul {
+            display: none;
+        }
+
+        .kanban-column li {
+            display: flex;
+            flex-direction: column; /* contenido arriba, íconos abajo */
+            justify-content: flex-start;
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .task-actions {
+            display: flex;
+            justify-content: flex-end; /* íconos a la derecha */
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .kanban-icon {
+            cursor: pointer;
+            font-size: 18px;
+            color: #e0e0e0;
+            transition: color 0.2s, transform 0.2s;
+        }
+
+        .kanban-icon:hover {
+            color: #00ffc3;
+            transform: scale(1.2);
+        }
+    </style>
 </head>
 
 <body>
@@ -98,12 +188,20 @@
 
 </div>
 
-<!-- MINI WIDGET RECORDATORIO -->
+<!-- WIDGET RECORDATORIO -->
 <div id="mini-warning"></div>
 
-<!-- USER ID DESDE FLASK -->
 <script>
     const USER_ID = "{{ session.get('usuario') }}";
+
+    // --- Plega columnas Kanban ---
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".kanban-column h3").forEach(h3 => {
+            h3.addEventListener("click", () => {
+                h3.parentElement.classList.toggle("collapsed");
+            });
+        });
+    });
 </script>
 
 <script src="/static/js/chat.js"></script>
