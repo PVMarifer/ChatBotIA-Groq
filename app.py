@@ -240,37 +240,151 @@ def index():
     return render_template("index.html")
 
 # -----------------------
-# CHAT
+# CHAT y TAREAS
 # -----------------------
+def guardar_tarea(usuario, tarea):
+    usuarios_db.update_one(
+        {"correo": usuario},
+        {"$push": {"tasks": tarea}}
+    )
+
+def actualizar_tarea(usuario, titulo, cambios):
+    usuarios_db.update_one(
+        {"correo": usuario, "tasks.titulo": titulo},
+        {"$set": {f"tasks.$.{k}": v for k, v in cambios.items()}}
+    )
+
+def obtener_tareas(usuario):
+    usuario_doc = usuarios_db.find_one({"correo": usuario})
+    return usuario_doc.get("tasks", []) if usuario_doc else []
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    try:
+        data = request.get_json(force=True)
+        user_message = data.get("message")
+        correo = session.get("usuario")
+        nombre = session.get("nombre", "usuario")
+
+        # Guardar mensaje del usuario
+        guardar_mensaje(correo, "user", user_message)
+        historial = obtener_historial(correo, limite=20)
+
+        # Obtener tareas pendientes
+        tareas = obtener_tareas(correo)
+        tareas_pendientes = [t for t in tareas if t.get("estado") == "pendiente"]
+
+        # Construir mensaje para el modelo
+        messages = [
+            {"role": "system", "content": f"Eres un asistente amigable. El usuario se llama {nombre}."}
+        ]
+        messages.extend(historial)
+
+        # Contexto proactivo de tareas
+        if tareas_pendientes:
+            tasks_text = "\n".join([f"- {t['titulo']} (para {t['fecha']})" for t in tareas_pendientes])
+            tarea_prioritaria = min(tareas_pendientes, key=lambda t: t['fecha'])
+            messages.append({
+                "role": "system",
+                "content": (
+                    f"Tienes estas tareas pendientes:\n{tasks_text}\n"
+                    f"La más urgente es '{tarea_prioritaria['titulo']}' para {tarea_prioritaria['fecha']}.\n"
+                    "Sugiere cuál empezar primero y cómo priorizarlas."
+                )
+            })
+
+        # Mensaje del usuario
+        messages.append({"role": "user", "content": user_message})
+
+        # Llamada al modelo Groq
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=messages
+        )
+        respuesta = completion.choices[0].message.content
+
+        # Guardar respuesta del asistente
+        guardar_mensaje(correo, "assistant", respuesta)
+
+        # Sugerencias de botones interactivos
+        sugerencias = [{"titulo": t["titulo"], "accion": "marcar_como_hecha"} for t in tareas_pendientes]
+
+        return jsonify({
+            "response": respuesta,
+            "tareas_sugeridas": sugerencias
+        })
+
+    except Exception as e:
+        print("ERROR EN CHAT:", repr(e))
+        return jsonify({"response": "Ocurrió un error interno en el servidor"}), 500
+# -----------------------
+# ACTUALIZAR TAREA (nuevo endpoint)
+# -----------------------
+@app.route("/actualizar_tarea", methods=["POST"])
+def actualizar_tarea_route():
+    try:
+        data = request.get_json(force=True)
+        correo = session.get("usuario")
+        titulo = data.get("titulo")
+        nuevo_estado = data.get("estado")
+        actualizar_tarea(correo, titulo, {"estado": nuevo_estado})
+        return jsonify({"ok": True})
+    except Exception as e:
+        print("ERROR AL ACTUALIZAR TAREA:", repr(e))
+        return jsonify({"ok": False, "error": str(e)})
+    try:
+        data = request.get_json(force=True)
+        user_message = data.get("message")
+
+        correo = session.get("usuario")
+        nombre = session.get("nombre", "usuario")
+
+        guardar_mensaje(correo, "user", user_message)
+        historial = obtener_historial(correo)
+
+        # Obtener tareas pendientes
+        tareas = obtener_tareas(correo)
+        tareas_pendientes = [t for t in tareas if t.get("estado") == "pendiente"]
+
+        messages = [
+            {"role": "system", "content": f"Eres un asistente amigable. El usuario se llama {nombre}."}
+        ]
+        messages.extend(historial)
+
+        if tareas_pendientes:
+            tasks_text = "\n".join([f"- {t['titulo']} (para {t['fecha']})" for t in tareas_pendientes])
+            messages.append({
+                "role": "system",
+                "content": (
+                    "El usuario tiene estas tareas pendientes:\n"
+                    f"{tasks_text}\n"
+                    "Sugiere cómo organizarlas, priorizarlas o mejorarlas de manera práctica."
+                )
+            })
+
+        messages.append({"role": "user", "content": user_message})
+
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=messages
+        )
+
+        respuesta = completion.choices[0].message.content
+        guardar_mensaje(correo, "assistant", respuesta)
+
+        return jsonify({"response": respuesta})
+    except Exception as e:
+        print("ERROR EN CHAT:", repr(e))
+        return jsonify({"response": "Ocurrió un error interno en el servidor"}), 500
+
     data = request.get_json(force=True)
-    user_message = data.get("message")
-
     correo = session.get("usuario")
-    nombre = session.get("nombre", "usuario")
+    titulo = data.get("titulo")
+    nuevo_estado = data.get("estado")
 
-    guardar_mensaje(correo, "user", user_message)
-    historial = obtener_historial(correo)
-
-    messages = [
-        {"role": "system", "content": f"Eres un asistente amigable. El usuario se llama {nombre}."}
-    ]
-
-    messages.extend(historial)
-    messages.append({"role": "user", "content": user_message})
-
-    completion = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=messages
-    )
-
-    respuesta = completion.choices[0].message.content
-    guardar_mensaje(correo, "assistant", respuesta)
-
-    return jsonify({"response": respuesta})
-
+    actualizar_tarea(correo, titulo, {"estado": nuevo_estado})
+    return jsonify({"ok": True})
 # -----------------------
 # RUN
 # -----------------------
